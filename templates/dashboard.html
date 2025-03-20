@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="bi bi-robot me-2"></i>Trading Bot Status
+                        </h4>
+                        <div>
+                            {% if not user_data.api_configured %}
+                            <a href="{{ url_for('api_settings') }}" class="btn btn-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Configure API
+                            </a>
+                            {% elif not user_data.active_bots %}
+                            <button id="startBot" class="btn btn-success">
+                                <i class="bi bi-play-circle me-2"></i>Start Bot
+                            </button>
+                            {% else %}
+                            <button id="stopBot" class="btn btn-danger">
+                                <i class="bi bi-stop-circle me-2"></i>Stop Bot
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-wallet2 me-2"></i>Balance
+                    </h5>
+                    <h3 class="mb-0" id="balance">${{ "%.2f"|format(user_data.balance) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up me-2"></i>Total Trades
+                    </h5>
+                    <h3 class="mb-0" id="totalTrades">{{ user_data.trades|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-percent me-2"></i>Win Rate
+                    </h5>
+                    <h3 class="mb-0" id="winRate">
+                        {% if user_data.trades %}
+                        {{ "%.1f"|format(user_data.trades|selectattr('profit_loss', '>', 0)|list|length / user_data.trades|length * 100) }}%
+                        {% else %}
+                        0%
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Trades</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P/L</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradeHistory">
+                                {% for trade in user_data.trades[-10:]|reverse %}
+                                <tr>
+                                    <td>{{ trade.symbol }}</td>
+                                    <td>
+                                        <span class="badge {% if trade.type == 'buy' %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ trade.type|upper }}
+                                        </span>
+                                    </td>
+                                    <td>${{ "%.2f"|format(trade.entry_price) }}</td>
+                                    <td>${{ "%.2f"|format(trade.exit_price) }}</td>
+                                    <td class="{% if trade.profit_loss > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        ${{ "%.2f"|format(trade.profit_loss) }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Symbols</h5>
+                    <div id="activeSymbols">
+                        {% for symbol in ['BTCUSD', 'ETHUSD', 'BNBUSD', 'SOLUSD', 'XRPUSD', 'AVAXUSD'] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ symbol }}</span>
+                            <div class="status-indicator status-{% if user_data.active_bots %}active{% else %}inactive{% endif %}"></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startBot = document.getElementById('startBot');
+    const stopBot = document.getElementById('stopBot');
+    
+    if (startBot) {
+        startBot.addEventListener('click', function() {
+            fetch('/start-bot', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.error);
+                    }
+                });
+        });
+    }
+    
+    if (stopBot) {
+        stopBot.addEventListener('click', function() {
+            fetch('/stop-bot', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+        });
+    }
+    
+    if ({{ user_data.active_bots|tojson }}) {
+        function updateBotStatus() {
+            fetch('/bot-status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('balance').textContent = `$${data.balance.toFixed(2)}`;
+                    document.getElementById('totalTrades').textContent = data.trades.length;
+                    
+                    if (data.trades.length > 0) {
+                        const winningTrades = data.trades.filter(t => t.profit_loss > 0).length;
+                        const winRate = (winningTrades / data.trades.length * 100).toFixed(1);
+                        document.getElementById('winRate').textContent = `${winRate}%`;
+                    }
+                    
+                    // Update trade history
+                    const tradeHistory = document.getElementById('tradeHistory');
+                    tradeHistory.innerHTML = data.trades.slice(-10).reverse().map(trade => `
+                        <tr>
+                            <td>${trade.symbol}</td>
+                            <td>
+                                <span class="badge ${trade.type === 'buy' ? 'bg-success' : 'bg-danger'}">
+                                    ${trade.type.toUpperCase()}
+                                </span>
+                            </td>
+                            <td>$${trade.entry_price.toFixed(2)}</td>
+                            <td>$${trade.exit_price.toFixed(2)}</td>
+                            <td class="${trade.profit_loss > 0 ? 'text-success' : 'text-danger'}">
+                                $${trade.profit_loss.toFixed(2)}
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+        
+        // Update every 5 seconds
+        setInterval(updateBotStatus, 5000);
+    }
+});
+</script>
+{% endblock %}

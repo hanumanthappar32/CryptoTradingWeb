@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block auth_content %}
+<div class="container-fluid">
+    <div class="row min-vh-100">
+        <div class="col-md-6 d-flex align-items-center justify-content-center bg-primary text-white">
+            <div class="text-center p-5">
+                <i class="bi bi-currency-bitcoin display-1 mb-4"></i>
+                <h1 class="display-4 fw-bold">Crypto Trading Bot</h1>
+                <p class="lead mb-4">
+                    Automate your cryptocurrency trading with our advanced volatility breakout strategy.
+                    Start trading smarter today!
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-person-plus me-2"></i>Get Started
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-light btn-lg px-4">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 d-flex align-items-center justify-content-center">
+            <div class="p-5">
+                <h2 class="fw-bold mb-4">Features</h2>
+                <div class="row g-4">
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-graph-up text-primary display-6 me-3"></i>
+                            <div>
+                                <h5>Volatility Breakout</h5>
+                                <p>Detect and capitalize on sudden price movements</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-shield-check text-primary display-6 me-3"></i>
+                            <div>
+                                <h5>Risk Management</h5>
+                                <p>Advanced stop-loss and position sizing</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-clock-history text-primary display-6 me-3"></i>
+                            <div>
+                                <h5>Real-time Trading</h5>
+                                <p>Execute trades automatically 24/7</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="d-flex align-items-start">
+                            <i class="bi bi-bar-chart text-primary display-6 me-3"></i>
+                            <div>
+                                <h5>Performance Analytics</h5>
+                                <p>Track your trading performance</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
